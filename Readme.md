@@ -1,5 +1,6 @@
 # TASK Manager Backend
-Este es el backend para Task Manager, una aplicación que permite crear, visualizar, actualizar o eliminar tareas.
+*Este es el backend para Task Manager, una aplicación que permite crear, visualizar, actualizar o eliminar tareas*
+*y manda un email al crear o editar una tarea.*
 
 ## Requisitos
 * Python 3.7 o superior
@@ -27,7 +28,7 @@ Este es el backend para Task Manager, una aplicación que permite crear, visuali
 # Configurar la base de datos:
 
 * Asegúrate de tener PostgreSQL instalado y configurado.
-* Crea una base de datos para el proyecto (ej. mapmyworld).
+* Crea una base de datos para el proyecto (ej. tasksdb).
 
 # Configuración de variables de entorno:
 
@@ -42,7 +43,7 @@ Este es el backend para Task Manager, una aplicación que permite crear, visuali
 ## Para ejecutar el servidor django ejecuta los siguientes comandos en una terminal:
 * python manage.py migrate
 * python manage.py runserver
-* Esto iniciará el servidor en http://localhost:8000.
+* Esto iniciará el servidor y abre en http://localhost:8000/api/task.
 
 # Documentación de la API
 ## Puedes acceder a la documentación interactiva de la API en http://localhost:8000/api/docs/swagger o http://localhost:8000/api/docs/redoc. Aquí podrás explorar todos los endpoints disponibles y probarlos directamente desde tu navegador.
