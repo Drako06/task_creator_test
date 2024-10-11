@@ -1,0 +1,205 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+
+    <!-- JavaScript de Bootstrap (dependencias) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+
+</head>
+<body>
+<div class="container">
+    <h1 class="my-4">Task Manager</h1>
+
+    <!-- Formulario para crear una nueva tarea -->
+    <form method="POST" action="{% url 'task_create' %}" class="mb-4" >
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="title">Title</label>
+                <input type="text" class="form-control" id="title" name="title" required autocomplete="on">
+            </div>
+            <div class="form-group col-md-4">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required autocomplete="on">
+            </div>
+            <div class="form-group col-md-4">
+                <label for="description">Description</label>
+                <input type="text" class="form-control" id="description" name="description" required autocomplete="on">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Task</button>
+    </form>
+
+    <!-- Tabla de tareas -->
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Title</th>
+            <th>Email</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in page_obj %}
+        <tr>
+            <td>{{ task.title }}</td>
+            <td>{{ task.email }}</td>
+            <td>{{ task.description }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal"
+                        data-id="{{ task.id }}" data-title="{{ task.title }}" data-email="{{ task.email }}"
+                        data-description="{{ task.description }}">
+                    Edit
+                </button>
+                <form method="POST" action="{% url 'task_delete' task.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger"
+                            onclick="return confirm('Are you sure you want to delete this task?');">Delete
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Paginación -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            <!-- Botón de "Primera página" -->
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">Primera</a>
+            </li>
+            {% endif %}
+
+            <!-- Botón de "Anterior" -->
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">&laquo;
+                    Anterior</a>
+            </li>
+            {% endif %}
+
+            <!-- Números de página -->
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            <!-- Botón de "Siguiente" -->
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">Siguiente
+                    &raquo;</a>
+            </li>
+            {% endif %}
+
+            <!-- Botón de "Última página" -->
+            {% if taskpage_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">Última</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- Modal para Editar Tarea -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Editar Tarea</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTaskForm" autocomplete="on">
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="editTitle" name="title"  autocomplete="on" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <input value="task.email" type="email" class="form-control" id="editEmail" name="email" required disabled autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="editDescription" name="description" required></textarea>
+                        </div>
+                        <input type="hidden" id="editTaskId" name="id">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="saveChanges">Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para asignar datos al modal -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const editButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const title = this.getAttribute('data-title');
+                const email = this.getAttribute('data-email');
+                const description = this.getAttribute('data-description');
+
+                console.log('Edit Button Clicked!'); // Verificar que se hace clic
+                console.log('ID:', id); // Verificar ID
+                console.log('Title:', title); // Verificar Título
+                console.log('Email:', email); // Verificar Email
+                console.log('Description:', description);
+
+                document.getElementById('editTaskId').value = id;
+                document.getElementById('editTitle').value = title;
+                document.getElementById('editEmail').value = email;
+                document.getElementById('editDescription').value = description;
+            });
+        });
+
+        document.getElementById("saveChanges").addEventListener("click", function () {
+            const id = document.getElementById("editTaskId").value
+            const title = document.getElementById("editTitle").value
+            const email = document.getElementById("editEmail").value
+            const description = document.getElementById("editDescription").value
+
+            fetch(`http://127.0.0.1:8000/api/tasks/${id}/`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": "{{ csrf_token }}", // Incluye el token CSRF
+                },
+                body: JSON.stringify({
+                  title: title,
+                  email: email,
+                  description: description,
+                }),
+            })
+            .then((response) => {
+                if (response.ok) {
+                    $("#editModal").modal("hide")
+                    window.location.reload();
+                }
+            });
+		})
+    });
+</script>
+
+</body>
+</html>
